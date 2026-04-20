@@ -23,7 +23,6 @@ body {
 .title {
   font-size: 26px;
   font-weight: 600;
-  margin-bottom: 10px;
 }
 
 .card {
@@ -49,7 +48,7 @@ button {
   margin-top: 15px;
   border: none;
   border-radius: 16px;
-  background: #000;
+  background: black;
   color: white;
   font-size: 16px;
 }
@@ -83,15 +82,14 @@ button {
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script>
-// API
 const API_KEY = "11487a73710383d34fb869029044215d";
 
-// Flatpickr (date picker bonito)
+// Date picker bonito
 flatpickr("#fecha", {
   dateFormat: "Y-m-d"
 });
 
-// Aeropuertos (dataset real ampliado)
+// Aeropuertos base
 const airports = [
   {code:"PTY", name:"Panama City"},
   {code:"MEX", name:"Mexico City"},
@@ -104,7 +102,7 @@ const airports = [
   {code:"AMS", name:"Amsterdam"}
 ];
 
-// Autocomplete PRO
+// Autocomplete
 function setupAutocomplete(id) {
   const input = document.getElementById(id);
 
@@ -143,7 +141,7 @@ function closeAll() {
 setupAutocomplete("origen");
 setupAutocomplete("destino");
 
-// Buscar vuelos
+// Buscar vuelos (FIX CORS)
 async function buscar() {
   const origen = document.getElementById("origen").value;
   const destino = document.getElementById("destino").value;
@@ -154,14 +152,21 @@ async function buscar() {
 
   try {
     const res = await fetch(
-      `https://api.allorigins.win/raw?url=http://api.aviationstack.com/v1/flights?access_key=${API_KEY}&dep_iata=${origen}&arr_iata=${destino}&flight_date=${fecha}`
+      `https://api.allorigins.win/get?url=http://api.aviationstack.com/v1/flights?access_key=${API_KEY}&dep_iata=${origen}&arr_iata=${destino}&flight_date=${fecha}`
     );
 
-    const data = await res.json();
+    const result = await res.json();
+    const data = JSON.parse(result.contents);
+
     cont.innerHTML = "";
 
+    if (!data.data || data.data.length === 0) {
+      cont.innerHTML = "No se encontraron vuelos";
+      return;
+    }
+
     data.data.slice(0,8).forEach(v => {
-      if (!v.departure.scheduled || !v.arrival.scheduled) return;
+      if (!v.departure?.scheduled || !v.arrival?.scheduled) return;
 
       const div = document.createElement("div");
       div.className = "card";
@@ -184,6 +189,7 @@ async function buscar() {
     });
 
   } catch(e) {
+    console.error(e);
     cont.innerHTML = "Error cargando vuelos";
   }
 }
@@ -207,7 +213,7 @@ END:VCALENDAR`;
   const blob = new Blob([ics], {type:"text/calendar"});
   const url = URL.createObjectURL(blob);
 
-  window.location.href = url; // clave para iPhone
+  window.location.href = url;
 }
 </script>
 
